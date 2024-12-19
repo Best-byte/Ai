@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyGPT</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+@keyframes fadeInOut {
+            0% {
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+            }
+        }
+
+        .h1 {
+            position: fixed;
+            top: 35vh;
+            width: 100%;
+        }
+
+        h1 {
+            margin: auto;
+            text-align: center;
+        }
+
+        body {
+            font-family: "DM Sans";
+            background-color: rgb(245, 245, 245);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        input {
+            margin-left: 2vw;
+            margin-right: 3vw;
+            height: 10vh;
+            width: 70vw;
+            border: none;
+            border-radius: 15px;
+            padding: 5px;
+            font-size: large;
+            background-color: rgb(221, 221, 221);
+            box-shadow: 1px 5px rgb(193, 191, 191);
+        }
+
+@media screen and (max-width:410px) {
+            input {
+                margin-right: 0vw;
+            }
+        }
+
+@media screen and (max-width:360px) {
+            button {
+                padding: 5px;
+            }
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-y: scroll;
+            height: calc(100vh - 150px);
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        .user-message {
+            background-color: #f0f0f0;
+            text-align: left;
+        }
+
+        .gpt-message {
+            background-color: #e0e0ff;
+            text-align: right;
+            margin-right: auto;
+        }
+
+        .nav {
+            margin: 2vh;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        h2 {
+            margin-left: 2vw;
+        }
+
+        button {
+            padding: 10px;
+            background-color: black;
+            border-radius: 50px;
+            color: white;
+            font-weight: bolder;
+            cursor: pointer;
+        }
+
+        .input {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            background-color: white;
+            padding: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="nav">
+        <h2>MyGPT</h2>
+        <button>Log In</button>
+    </div>
+    <div class="h1">
+        <h1 id="greeting">How Can I Help?</h1>
+    </div>
+    <div class="chat-container">
+    </div>
+    <div class="input">
+        <form id="message-form">
+            <input type="text" id="message-input" placeholder=" Message">
+            <button class="button" type="submit">Send</button>
+        </form>
+    </div>
+    <script>
+
+      const messageForm = document.getElementById('message-form');
+const messageInput = document.getElementById('message-input');
+const chatContainer = document.querySelector('.chat-container');
+const greeting = document.getElementById('greeting');
+
+
+// Improved gptResponses with more diverse and informative responses
+const gptResponses = [
+    { "question": "What is the capital of France?", "answer": "Paris" },
+    { "question": "Who painted the Mona Lisa?", "answer": "Leonardo da Vinci" },
+    { "question": "What is the largest planet in our solar system?", "answer": "Jupiter" },
+    { "question": "time", "answer": () => "It's currently " + new Date().toLocaleTimeString() + "." }, // Use arrow function for dynamic responses
+    { "question": "Hi", "answer": "Hello! How are you today?" },
+    { "question": "Hello", "answer": "Hi there! What can I do for you?" },
+    { "question": "Good morning", "answer": "Good morning to you too!" },
+    { "question": "Good afternoon", "answer": "Good afternoon!" },
+    { "question": "Good evening", "answer": "Good evening!" },
+    { "question": "Have a nice day!", "answer": "You too! Have a wonderful day." },
+    { "question": "Thank you", "answer": "You're welcome!" },
+    { "question": "Goodbye", "answer": "Goodbye! Have a great day." },
+    { "question": "speak", "answer": "Sure!" },
+    { "question": "what is the weather today", "answer": "I do not have access to real-time information, including weather conditions. To get the most up-to-date weather forecast, I recommend checking a reliable weather app or website such as AccuWeather, The Weather Channel, or your local news." },
+    { "question": "what is the meaning of life", "answer": "The meaning of life is a question that has been pondered by philosophers and individuals for centuries. There is no single, universally accepted answer. Some believe it is to find happiness and fulfillment, others believe it is to make a difference in the world, and still others believe it is to experience and appreciate life itself." },
+    { "question": "tell me a joke", "answer": "Why don't scientists trust atoms? Because they make up everything! " },
+    { "question": "what is the square root of", "answer": (input) => {
+        try {
+            const number = parseFloat(input.split(' ')[3]); 
+            if (isNaN(number) || number < 0) {
+                return "Please provide a valid positive number.";
+            }
+            return Math.sqrt(number);
+        } catch (error) {
+            return "Invalid input. Please provide a number after 'square root of'.";
+        }
+    } },
+    { "question": "what is the power of", "answer": (input) => {
+        try {
+            const [base, exponent] = input.split(' ')[3].split('^'); 
+            return Math.pow(parseFloat(base), parseFloat(exponent));
+        } catch (error) {
+            return "Invalid input. Please provide a number followed by '^' and another number after 'power of'.";
+        }
+    } },{ "question": "what is", "answer": (input) => {
+    try {
+        // Extract the mathematical expression from the input
+        const expression = input.split(' ')[2]; 
+
+        // Define allowed operators and numbers
+        const allowedOperators = ['+', '-', '*', '/'];
+        const allowedCharacters = '0123456789.+-*/'; 
+
+        // Validate the expression
+        if (!expression || !expression.match(/^[0-9.+\-*/]+$/)) {
+            return "Invalid input. Please provide a valid mathematical expression (e.g., 'what is 5 + 3').";
+        }
+
+        // Evaluate the expression using a safer approach
+        let result;
+        try {
+            result = Function(`'use strict'; return (${expression})`)(); 
+        } catch (error) {
+            return "Invalid input. Please provide a valid mathematical expression (e.g., 'what is 5 + 3').";
+        }
+
+        return result;
+
+    } catch (error) {
+        return "An error occurred while processing your request.";
+    }
+} }
+
+    
+];
+
+function getTimeOfDayGreeting() {
+    const now = new Date();
+    const hours = now.getHours();
+
+    let greeting;
+
+    if (hours >= 5 && hours < 12) {
+        greeting = "Good Morning";
+    } else if (hours >= 12 && hours < 17) {
+        greeting = "Good Afternoon";
+    } else if (hours >= 17 && hours < 21) {
+        greeting = "Good Evening";
+    } else {
+        greeting = "Good Night";
+    }
+
+    return greeting;
+}
+
+// Get the greeting and display it (e.g., in the console)
+greeting.textContent = getTimeOfDayGreeting();
+
+// Change greeting after 5 seconds
+setTimeout(() => {
+    greeting.textContent = getTimeOfDayGreeting();
+}, 5000); // 5000 milliseconds = 5 seconds
+
+let voices = [];
+let currentVoiceIndex = 0;
+
+if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = () => {
+        voices = speechSynthesis.getVoices();
+        if (voices.length > 0) {
+            currentVoiceIndex = 0; // Always use the first voice
+        } else {
+            console.warn("No voices found.");
+        }
+    };
+
+    // Check for available voices immediately
+    voices = speechSynthesis.getVoices();
+    if (voices.length > 0) {
+        currentVoiceIndex = 0; // Use the first voice
+    }
+}
+
+function speak(answer) {
+    if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance();
+        utterance.text = answer;
+
+        if (voices.length > 0) {
+            utterance.voice = voices[currentVoiceIndex];
+            window.speechSynthesis.speak(utterance);
+        } else {
+            console.warn("No voices found or not yet loaded.");
+        }
+    } else {
+        alert('Your browser does not support text-to-speech.');
+    }
+}
+
+let firstMessageSent = false;
+
+messageForm.addEventListener('submit', function (event) {
+    event.preventDefault();
+
+    const userMessage = messageInput.value.toLowerCase();
+
+    // Create user message element
+    const userMessageElement = document.createElement('div');
+    userMessageElement.classList.add('message', 'user-message');
+    userMessageElement.textContent = userMessage;
+    chatContainer.appendChild(userMessageElement);
+
+    // Determine GPT response
+    let response = "I'm still learning. Could you please rephrase your request?";
+
+    // Improved response handling
+    for (const { question, answer } of gptResponses) {
+        if (userMessage.includes(question.toLowerCase())) {
+            response = typeof answer === 'function' ? answer(userMessage) : answer; 
+            break;
+        }
+    }
+
+    // Speak the response (always)
+    speak(response);
+
+    // Create GPT message element
+    const gptMessageElement = document.createElement('div');
+    gptMessageElement.classList.add('message', 'gpt-message');
+    gptMessageElement.textContent = response;
+    chatContainer.appendChild(gptMessageElement);
+
+    messageInput.value = ''; // Clear input field
+    chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll to bottom
+
+    if (!firstMessageSent) {
+        greeting.style.display = 'none';
+        firstMessageSent = true;
+    }
+});
+
+    </script>
+</body>
+</html>
